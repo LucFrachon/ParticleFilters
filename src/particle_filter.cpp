@@ -48,7 +48,6 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
     printParticle(particles[i]);
   }
   */
-
   is_initialized = true;
 
 }
@@ -59,6 +58,37 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	//  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
 	//  http://www.cplusplus.com/reference/random/default_random_engine/
 
+  //for each particle:
+  for(int i = 0; i < num_particles; i++)
+  {
+    //define useful values for convenience
+    double xi = particles[i].x;
+    double xf;
+    double yi = particles[i].y;
+    double yf;
+    double theta_i = particles[i].theta;
+    double theta_f;
+
+    if(yaw_rate > 0.0001)
+    {
+      //compute the projected value of xf, yf, thetaf using control inputs when yaw_rate != 0 
+      xf = xi + velocity / yaw_rate * (sin(theta_i +  yaw_rate * delta_t) - sin(theta_i));
+      yf = yi + velocity / yaw_rate * (-cos(theta_i + yaw_rate * delta_t) + cos(theta_i));
+      theta_f = theta_i + yaw_rate * delta_t;
+
+    } else
+    {
+      //or compute the projected value of xf, yf, thetaf using control inputs when yaw_rate == 0
+      xf = xi + velocity * delta_t * cos(theta_i);
+      yf = yi + velocity * delta_t * sin(theta_i);
+      theta_f = theta_i;
+    }
+
+    //sample a value for x, y, theta from a normal distribution with mean = xf, yf, thetaf
+    particles[i].x = sampleFromUnivariateNormal(xf, std_pos[0]);
+    particles[i].y = sampleFromUnivariateNormal(yf, std_pos[1]);
+    particles[i].theta = sampleFromUnivariateNormal(theta_f, std_pos[2]);
+  }
   
 }
 
