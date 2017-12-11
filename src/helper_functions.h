@@ -226,7 +226,7 @@ inline bool read_landmark_data(std::string filename, std::vector<LandmarkObs>& o
 
 		//read data from line to values:
 		iss_obs >> local_x;
-		iss_obs >> local_y;
+		iss_obs >> local_y; 
 
 		// Declare single landmark measurement:
 		LandmarkObs meas;
@@ -240,5 +240,6 @@ inline bool read_landmark_data(std::string filename, std::vector<LandmarkObs>& o
 	}
 	return true;
 }
+
 
 #endif /* HELPER_FUNCTIONS_H_ */

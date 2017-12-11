@@ -25,6 +25,32 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	// Add random Gaussian noise to each particle.
 	// NOTE: Consult particle_filter.h for more information about this method (and others in this file).
 
+  num_particles = 10;
+
+  
+  for(int i = 0; i < num_particles; i++)
+  {
+    Particle p;
+    p.id = i;
+    p.x = sampleFromUnivariateNormal(x, std[0]);  //sample initial value of x
+    p.y = sampleFromUnivariateNormal(y, std[1]);  //sample initial value of y
+    p.theta = sampleFromUnivariateNormal(theta, std[2]);  //sample initial value of theta
+    p.weight = 1.0;  //initial weight of all particles is 1.0
+
+    particles.push_back(p);  //add particle to particle filter
+    weights.push_back(1.0);  //set all initial weights to 1.0
+  }
+
+  /* === Uncomment for debugging ===
+  cout << "Filter initialized, initial positions:\n";
+  for(int i = 0; i < num_particles; i++)
+  {
+    printParticle(particles[i]);
+  }
+  */
+
+  is_initialized = true;
+
 }
 
 void ParticleFilter::prediction(double delta_t, double std_pos[], double velocity, double yaw_rate) {
@@ -33,6 +59,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	//  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
 	//  http://www.cplusplus.com/reference/random/default_random_engine/
 
+  
 }
 
 void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations) {
@@ -69,8 +96,8 @@ Particle ParticleFilter::SetAssociations(Particle& particle, const std::vector<i
 {
     //particle: the particle to assign each listed association, and association's (x,y) world coordinates mapping to
     // associations: The landmark id that goes along with each listed association
-    // sense_x: the associations x mapping already converted to world coordinates
-    // sense_y: the associations y mapping already converted to world coordinates
+    // sense_x: the association's x mapping already converted to world coordinates
+    // sense_y: the association's y mapping already converted to world coordinates
 
     particle.associations= associations;
     particle.sense_x = sense_x;
@@ -103,4 +130,20 @@ string ParticleFilter::getSenseY(Particle best)
     string s = ss.str();
     s = s.substr(0, s.length()-1);  // get rid of the trailing space
     return s;
+}
+
+float ParticleFilter::sampleFromUnivariateNormal(float mean, float stdev)
+{
+  normal_distribution<double> dist(mean, stdev);
+  return dist(gen);
+}
+
+void ParticleFilter::printParticle(const Particle p)
+{
+  cout << "\nParticle id:\t" << p.id << endl
+       << "Position x:\t" << p.x << endl
+       << "Position y:\t" << p.y << endl
+       << "Bearing theta:\t" << p.theta << endl
+       << "Weight:\t" << p.weight << endl;
+
 }

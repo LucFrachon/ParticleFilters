@@ -1,4 +1,4 @@
-/*
+ /*
  * particle_filter.h
  *
  * 2D particle filter class.
@@ -10,6 +10,7 @@
 #define PARTICLE_FILTER_H_
 
 #include "helper_functions.h"
+#include <random>
 
 struct Particle {
 
@@ -30,13 +31,14 @@ class ParticleFilter {
 	// Number of particles to draw
 	int num_particles; 
 	
-	
-	
 	// Flag, if filter is initialized
 	bool is_initialized;
 	
 	// Vector of weights of all particles
 	std::vector<double> weights;
+
+  // Initialize a random generator
+  std::default_random_engine gen;
 	
 public:
 	
@@ -115,6 +117,17 @@ public:
 	const bool initialized() const {
 		return is_initialized;
 	}
+
+  /*
+  Sample a scalar value from a univariate normal distribution.
+  */    
+  float sampleFromUnivariateNormal(float mean, float stdev);
+
+  /*
+  Debugging function that displays coordinates of a particle and its associated weight
+  */
+  void printParticle(const Particle p);
+
 };
 
 
