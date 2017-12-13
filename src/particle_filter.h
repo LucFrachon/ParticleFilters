@@ -47,7 +47,7 @@ class ParticleFilter {
    * @param observations: The list of observations received from sensors. This will be converted to map
    *   coordinates and the converted coordinates will replace the initial elements of `observations`.
    */
-  inline void transformObservation(LandmarkObs& observation, Particle p);
+  inline LandmarkObs transformObservation(LandmarkObs& observation, Particle p);
 
 	
 public:
@@ -93,7 +93,8 @@ public:
    * @map_landmarks A Map object that contains actual landmark positions in map coordinates 
    */
 void transformAndAssociate(Particle& particle, 
-    std::vector<LandmarkObs>& observations, const Map &map_landmarks, double sigma_pos[]);
+    std::vector<LandmarkObs>& observations, const double sensor_range, const Map &map_landmarks, 
+    double sigma_pos[]);
 	
 	/**
 	 * updateWeights Updates the weights for each particle based on the likelihood of the 
@@ -103,7 +104,7 @@ void transformAndAssociate(Particle& particle,
 	 * @param observations Vector of landmark observations
 	 * @param map Map class containing map landmarks
 	 */
-	void updateWeights(double sensor_range, double std_landmark[], std::vector<LandmarkObs> &observations,
+	void updateWeights(double sensor_range, double std_landmark[], std::vector<LandmarkObs> observations,
 			const Map &map);
 	
 	/**
