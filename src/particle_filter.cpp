@@ -22,7 +22,7 @@ using namespace std;
 void ParticleFilter::init(double x, double y, double theta, double std[]) {
 
   num_particles = 5;  //Any number greater or equal to 2 works here.
-  debug = false ;
+  debug = false ;  //Set to true to debug prediction step
   
   for(int i = 0; i < num_particles; ++i)
   {
@@ -85,16 +85,13 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
     double theta_i = particles[i].theta;
     double theta_f;
 
-    cout << "\n\nyaw rate\t" << yaw_rate << "\n";; 
-
     if(fabs(yaw_rate) > 0.00001)
     {
       //compute the projected value of xf, yf, thetaf using control inputs when yaw_rate != 0 
       xf = xi + velocity / yaw_rate * (sin(theta_i +  yaw_rate * delta_t) - sin(theta_i));
       yf = yi + velocity / yaw_rate * (-cos(theta_i + yaw_rate * delta_t) + cos(theta_i));
       theta_f = theta_i + yaw_rate * delta_t;
-      cout << "theta i and f:\t" << theta_i << "\t" << theta_f << endl;
-
+      
     } else
     {
       //or compute the projected value of xf, yf, thetaf using control inputs when yaw_rate == 0
@@ -118,9 +115,11 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
       particles[i].theta = theta_f;
     }
     
+    /*
     cout << "\nPositions after prediction step:\n ";
     printParticle(particles[i]);
-    
+    */
+
   }
   
 }
@@ -150,31 +149,14 @@ void ParticleFilter::transformAndAssociate(Particle& particle,
     std::vector<LandmarkObs>& observations, const double sensor_range, const Map &map, double sigma_pos[]) {
 
   //for a single particle:
-  
-  //cout << "\n\nParticle " << particle.id << endl;
-  //cout << "\nNumber of observations: " << observations.size() << endl;
 
   for(int obs = 0; obs < observations.size(); ++obs)
   {
-    /*
-    cout << "\nInitial coordinates:\t"
-         << "\t" << observations[obs].x
-         << "\t" << observations[obs].y
-         << endl;
-    */
-
     //convert each observation to map coordinates using particle's position
     transformObservation(observations[obs], particle);
 
-    /*
-    cout << "Transformed coordinates:\t"
-         << "\t" << observations[obs].x
-         << "\t" << observations[obs].y
-         << endl;
-    */
-
     //initialize minimum distance and its index
-    double min_distance = 999999;
+    double min_distance = 999;
     int nearest_landmark_index = -1;
 
     //associate observation (now in vehicle coordinates) with nearest neighbour landmark
@@ -184,8 +166,11 @@ void ParticleFilter::transformAndAssociate(Particle& particle,
       double yl = map.landmark_list[lm].y_f;
       double landmark_to_particle = dist(particle.x, xl, particle.y, yl);
       
+      
+      /*The following seems like a good idea but actually reduces the filter's accuracy significantly
       //ignore any landmarks whose distance to the particle is higher than the sensor range
-      //if(landmark_to_particle > sensor_range) continue;
+      if(landmark_to_particle > sensor_range) continue;
+      */
 
       double xo = observations[obs].x;
       double yo = observations[obs].y;
@@ -212,7 +197,6 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 
   if(debug) return;  //if we are in debugging mode, do nothing
 
-
   //reinitialize list of particle weights
   weights.clear();
 
@@ -224,24 +208,17 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     particles[i].associations.clear();
     transformAndAssociate(particles[i], observations_map, sensor_range, map, std_landmark);
 
-    /*
-    cout << "Associations for particle\t" << i << ":\n";
-    for(int j = 0; j < particles[i].associations.size(); ++j)
-    {
-      cout << "obs " << j << ":\t" << particles[i].associations[j] << endl;
-    }
-    */
-
     //compute the probability of each observation according to a multivariate normal distribution
-
     double joint_prob = 1.;
 
     for(int obs = 0; obs < observations_map.size(); obs++)
     {
       int landmark_index = particles[i].associations[obs];
       
+      /* Only useful in conjunction with the test against sensor_range in transformAndAssociate()
       //ignore observation if not matched to any landmark
       if(-1 == landmark_index) continue;
+      */
 
       double xo = observations_map[obs].x;
       double yo = observations_map[obs].y;
@@ -250,12 +227,6 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
         
       double obs_prob = computeBivariateNormalProbability(xo, yo, xl, yl, std_landmark[0], std_landmark[1]);
       joint_prob *= obs_prob;
-
-      /*cout << "Transformed observation coordinates used in prob calculation:\t"
-           << "\t" << observations_map[obs].x
-           << "\t" << observations_map[obs].y
-           << endl;
-      */
 
       //cout << "Observation " << obs << " probability =\t" << obs_prob << endl;
     }
@@ -274,15 +245,6 @@ void ParticleFilter::resample() {
 
   if(debug) return;  //if we are in debugging mode, do nothing
 
-  cout << "\nWeights after update:\n";
-  double weight_sum = 0;
-  for (int i = 0; i < weights.size(); ++i)
-  {
-    cout << weights[i] << endl;
-    weight_sum += weights[i];
-  } 
-  cout << "average w " << weight_sum / num_particles << endl;
-
   std::vector<Particle> new_particles;
   std::discrete_distribution<> d(weights.begin(), weights.end());
   //discrete_distribution already normalizes probabilities
@@ -290,14 +252,16 @@ void ParticleFilter::resample() {
   for (int i = 0; i < num_particles; ++i)
   {
     new_particles.push_back(particles[d(gen)]);
+
+    /*cout << "\nParticle after resampling update:\t";
+    printParticle(particles[i]);
+    */
   }
+
   //replace old particles with new sample
   particles = std::move(new_particles);
-
-  cout << "\nWeights after resampling:\n";
-  for (int i = 0; i < weights.size(); ++i) cout << weights[i] << endl;
-  
 }
+
 
 Particle ParticleFilter::setAssociations(Particle& particle, const std::vector<int>& associations, 
                                      const std::vector<double>& sense_x, const std::vector<double>& sense_y)
