@@ -36,12 +36,14 @@ int main()
   double sigma_pos [3] = {0.3, 0.3, 0.01}; // GPS measurement uncertainty [x [m], y [m], theta [rad]]
   double sigma_landmark [2] = {0.3, 0.3}; // Landmark measurement uncertainty [x [m], y [m]]
 
+
   // Read map data
   Map map;
   if (!read_map_data("../data/map_data.txt", map)) {
     cout << "Error: Could not open map file" << endl;
     return -1;
   }
+
 
   // Create particle filter
   ParticleFilter pf;

@@ -20,26 +20,39 @@
 using namespace std;
 
 void ParticleFilter::init(double x, double y, double theta, double std[]) {
-  // TODO: Set the number of particles. Initialize all particles to first position (based on estimates of 
-  //   x, y, theta and their uncertainties from GPS) and all weights to 1. 
-  // Add random Gaussian noise to each particle.
-  // NOTE: Consult particle_filter.h for more information about this method (and others in this file).
 
-  num_particles = 30;
-
+  num_particles = 5;  //Any number greater or equal to 2 works here.
+  debug = false ;
   
   for(int i = 0; i < num_particles; ++i)
   {
     Particle p;
     p.id = i;
+    
+    if(!debug)
+    {
+      p.x = sampleFromUnivariateNormal(x, std[0]);  //sample initial value of x
+      p.y = sampleFromUnivariateNormal(y, std[1]);  //sample initial value of y
+      p.theta = sampleFromUnivariateNormal(theta, std[2]);  //sample initial value of theta
+      p.weight = 1.0;  //initial weight of all particles is 1.0
+      weights.push_back(1.0);  //set all initial weights to 1.0
+      particles.push_back(p);  //add particle to particle filter
+    } 
+    else
+    { //if debugging, pass GPS readings without added noise
+      p.x = x;
+      p.y = y;
+      p.theta = theta;
+      p.weight = 0.0;
+      weights.push_back(0.0);
+      particles.push_back(p);  //add particle to particle filter
+    }
+  }
 
-    p.x = sampleFromUnivariateNormal(x, std[0]);  //sample initial value of x
-    p.y = sampleFromUnivariateNormal(y, std[1]);  //sample initial value of y
-    p.theta = sampleFromUnivariateNormal(theta, std[2]);  //sample initial value of theta
-    p.weight = 1.0;  //initial weight of all particles is 1.0
-
-    particles.push_back(p);  //add particle to particle filter
-    weights.push_back(1.0);  //set all initial weights to 1.0
+  if(debug) //if debugging, set first particle weight to 1 and all others to 0
+  {
+    particles[0].weight = 1.0;
+    weights[0] = 1.0;
   }
 
   cout << "Filter initialized, initial positions:\n";
@@ -72,12 +85,15 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
     double theta_i = particles[i].theta;
     double theta_f;
 
-    if(yaw_rate > 0.0001)
+    cout << "\n\nyaw rate\t" << yaw_rate << "\n";; 
+
+    if(fabs(yaw_rate) > 0.00001)
     {
       //compute the projected value of xf, yf, thetaf using control inputs when yaw_rate != 0 
       xf = xi + velocity / yaw_rate * (sin(theta_i +  yaw_rate * delta_t) - sin(theta_i));
       yf = yi + velocity / yaw_rate * (-cos(theta_i + yaw_rate * delta_t) + cos(theta_i));
       theta_f = theta_i + yaw_rate * delta_t;
+      cout << "theta i and f:\t" << theta_i << "\t" << theta_f << endl;
 
     } else
     {
@@ -87,15 +103,24 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
       theta_f = theta_i;
     }
 
-    //sample a value for x, y, theta from a normal distribution with mean = xf, yf, thetaf
-    particles[i].x = sampleFromUnivariateNormal(xf, std_pos[0]);
-    particles[i].y = sampleFromUnivariateNormal(yf, std_pos[1]);
-    particles[i].theta = sampleFromUnivariateNormal(theta_f, 2 * std_pos[2]);
-
-    /*
+    if(!debug)
+    {
+      //sample a value for x, y, theta from a normal distribution with mean = xf, yf, thetaf
+      particles[i].x = sampleFromUnivariateNormal(xf, std_pos[0]);
+      particles[i].y = sampleFromUnivariateNormal(yf, std_pos[1]);
+      particles[i].theta = sampleFromUnivariateNormal(theta_f, std_pos[2]);
+      
+    }
+    else  //if we are debugging don't add any noise
+    {
+      particles[i].x = xf;
+      particles[i].y = yf;
+      particles[i].theta = theta_f;
+    }
+    
     cout << "\nPositions after prediction step:\n ";
     printParticle(particles[i]);
-    */
+    
   }
   
 }
@@ -123,6 +148,7 @@ inline LandmarkObs ParticleFilter::transformObservation(LandmarkObs& observation
 
 void ParticleFilter::transformAndAssociate(Particle& particle, 
     std::vector<LandmarkObs>& observations, const double sensor_range, const Map &map, double sigma_pos[]) {
+
   //for a single particle:
   
   //cout << "\n\nParticle " << particle.id << endl;
@@ -184,6 +210,9 @@ void ParticleFilter::transformAndAssociate(Particle& particle,
 void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], 
     std::vector<LandmarkObs> observations, const Map &map) {
 
+  if(debug) return;  //if we are in debugging mode, do nothing
+
+
   //reinitialize list of particle weights
   weights.clear();
 
@@ -242,6 +271,8 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 
 void ParticleFilter::resample() {
   // Resample particles with replacement with probability proportional to their weight. 
+
+  if(debug) return;  //if we are in debugging mode, do nothing
 
   cout << "\nWeights after update:\n";
   double weight_sum = 0;

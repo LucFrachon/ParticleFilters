@@ -29,7 +29,7 @@ struct Particle {
 class ParticleFilter {
 	
 	// Number of particles to draw
-	int num_particles; 
+  int num_particles; 
 	
 	// Flag, if filter is initialized
 	bool is_initialized;
@@ -39,6 +39,9 @@ class ParticleFilter {
 
   // Initialize a random generator
   std::default_random_engine gen;
+
+  // Debug flag
+  bool debug;
 
   /*
    * transformObservation: For a single particle, converts a single observation from vehicle to map
