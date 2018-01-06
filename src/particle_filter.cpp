@@ -21,7 +21,7 @@ using namespace std;
 
 void ParticleFilter::init(double x, double y, double theta, double std[]) {
 
-  num_particles = 5;  //Any number greater or equal to 2 works here.
+  num_particles = 100;  //Any number greater or equal to 2 works here.
   debug = false ;  //Set to true to debug prediction step
   
   for(int i = 0; i < num_particles; ++i)
